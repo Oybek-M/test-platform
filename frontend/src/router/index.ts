@@ -7,6 +7,7 @@ import QuestionsView from '../views/admin/QuestionsView.vue'
 import GroupsView from '../views/admin/GroupsView.vue'
 import ExamsView from '../views/admin/ExamsView.vue'
 import ExamFormView from '../views/admin/ExamFormView.vue'
+import LiveCodeView from '../views/admin/LiveCodeView.vue'
 import AdminLayout from '../components/AdminLayout.vue'
 
 const router = createRouter({
@@ -26,6 +27,7 @@ const router = createRouter({
         { path: 'groups', name: 'admin-groups', component: GroupsView },
         { path: 'exams', name: 'admin-exams', component: ExamsView },
         { path: 'exams/new', name: 'admin-exam-new', component: ExamFormView },
+        { path: 'exams/:id/live-code', name: 'admin-exam-live-code', component: LiveCodeView },
       ],
     },
   ],
