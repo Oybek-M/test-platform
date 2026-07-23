@@ -137,3 +137,15 @@ class ExamOut(BaseModel):
 class ExamTotpOut(BaseModel):
     code: str
     seconds_left: int
+
+
+class AttemptResultOut(BaseModel):
+    student_id: int
+    student_name: str
+    score: int | None
+    total: int | None
+    percent: int | None
+    grade: str | None
+    started_at: datetime
+    submitted_at: datetime | None
+    status: str

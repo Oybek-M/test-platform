@@ -3,11 +3,20 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_admin
 from app.database import get_db
+from app.models.attempt import Attempt
 from app.models.course import Course
 from app.models.exam import Exam
 from app.models.group import Group
 from app.models.question import Question
-from app.schemas.exam import ExamCreate, ExamOut, ExamStatusUpdate, ExamTotpOut, ExamUpdate
+from app.models.student import Student
+from app.schemas.exam import (
+    AttemptResultOut,
+    ExamCreate,
+    ExamOut,
+    ExamStatusUpdate,
+    ExamTotpOut,
+    ExamUpdate,
+)
 from app.services import access_code as access_code_service
 from app.services import totp
 
@@ -150,3 +159,27 @@ def get_live_totp_code(exam_id: int, db: Session = Depends(get_db)):
     exam = _get_exam_or_404(exam_id, db)
     code, seconds_left = totp.current_code(exam.totp_secret, exam.totp_digits, exam.totp_period)
     return ExamTotpOut(code=code, seconds_left=seconds_left)
+
+
+@router.get("/{exam_id}/results", response_model=list[AttemptResultOut])
+def get_exam_results(exam_id: int, db: Session = Depends(get_db)):
+    exam = _get_exam_or_404(exam_id, db)
+    attempts = db.query(Attempt).filter(Attempt.exam_id == exam.id).order_by(Attempt.id).all()
+
+    results = []
+    for attempt in attempts:
+        student = db.get(Student, attempt.student_id)
+        results.append(
+            AttemptResultOut(
+                student_id=attempt.student_id,
+                student_name=student.full_name if student else "?",
+                score=attempt.score,
+                total=attempt.total,
+                percent=attempt.percent,
+                grade=attempt.grade,
+                started_at=attempt.started_at,
+                submitted_at=attempt.submitted_at,
+                status=attempt.status,
+            )
+        )
+    return results

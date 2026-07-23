@@ -133,3 +133,48 @@ def test_delete_exam_is_soft(client, auth_headers):
 
     listing = client.get("/api/admin/exams", headers=auth_headers, params={"course_id": course_id})
     assert all(e["id"] != exam_id for e in listing.json())
+
+
+def test_exam_results_reflects_completed_attempt(client, auth_headers):
+    course_id = _create_course(client, auth_headers)
+    group_id = _create_group(client, auth_headers, course_id)
+    client.post(
+        f"/api/admin/groups/{group_id}/students", headers=auth_headers, json={"text": "Aliyev Vali"}
+    )
+    _add_questions(client, auth_headers, course_id, 3)
+
+    payload = _exam_payload(
+        course_id,
+        group_id,
+        question_count=3,
+        starts_at=(datetime.now(timezone.utc) - timedelta(minutes=1)).isoformat(),
+        shuffle_options=False,
+    )
+    create = client.post("/api/admin/exams", headers=auth_headers, json=payload)
+    exam_id = create.json()["id"]
+    access_code = create.json()["access_code"]
+    client.post(f"/api/admin/exams/{exam_id}/status", headers=auth_headers, json={"status": "open"})
+
+    empty_results = client.get(f"/api/admin/exams/{exam_id}/results", headers=auth_headers)
+    assert empty_results.status_code == 200
+    assert empty_results.json() == []
+
+    code = client.get(f"/api/admin/exams/{exam_id}/totp", headers=auth_headers).json()["code"]
+    students = client.get(f"/api/exam/{access_code}/students", params={"code": code}).json()
+    student_id = students[0]["id"]
+
+    start = client.post(f"/api/exam/{access_code}/start", json={"student_id": student_id, "code": code})
+    answers = {q["id"]: 0 for q in start.json()["questions"]}
+    client.post(
+        f"/api/exam/{access_code}/submit",
+        json={"attempt_id": start.json()["attempt_id"], "answers": answers},
+    )
+
+    results = client.get(f"/api/admin/exams/{exam_id}/results", headers=auth_headers).json()
+    assert len(results) == 1
+    assert results[0]["student_name"] == "Aliyev Vali"
+    assert results[0]["score"] == 3
+    assert results[0]["total"] == 3
+    assert results[0]["percent"] == 100
+    assert results[0]["grade"] == "A"
+    assert results[0]["status"] == "submitted"
