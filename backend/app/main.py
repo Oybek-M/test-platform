@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api.admin.auth import router as admin_auth_router
 from app.config import settings
 
 app = FastAPI(title="test-platform")
@@ -12,6 +13,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.include_router(admin_auth_router)
 
 
 @app.get("/api/health")
