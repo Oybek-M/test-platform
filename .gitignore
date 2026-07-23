@@ -1,0 +1,32 @@
+# --- Sirlar / muhit ---
+.env
+.env.*
+!.env.example
+
+# --- Python (backend) ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+*.sqlite3
+*.db
+
+# --- Node / Vue (frontend) ---
+node_modules/
+dist/
+.vite/
+*.local
+
+# --- Import/eksport vaqtinchalik fayllari ---
+uploads/
+tmp/
+*.tmp
+
+# --- IDE / OS ---
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
