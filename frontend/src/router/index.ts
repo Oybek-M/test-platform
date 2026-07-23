@@ -9,6 +9,11 @@ import ExamsView from '../views/admin/ExamsView.vue'
 import ExamFormView from '../views/admin/ExamFormView.vue'
 import LiveCodeView from '../views/admin/LiveCodeView.vue'
 import AdminLayout from '../components/AdminLayout.vue'
+import ExamEntryView from '../views/exam/ExamEntryView.vue'
+import PasswordView from '../views/exam/PasswordView.vue'
+import PickNameView from '../views/exam/PickNameView.vue'
+import ExamView from '../views/exam/ExamView.vue'
+import ResultView from '../views/exam/ResultView.vue'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -28,6 +33,16 @@ const router = createRouter({
         { path: 'exams', name: 'admin-exams', component: ExamsView },
         { path: 'exams/new', name: 'admin-exam-new', component: ExamFormView },
         { path: 'exams/:id/live-code', name: 'admin-exam-live-code', component: LiveCodeView },
+      ],
+    },
+    {
+      path: '/e/:accessCode',
+      children: [
+        { path: '', name: 'exam-entry', component: ExamEntryView },
+        { path: 'password', name: 'exam-password', component: PasswordView },
+        { path: 'name', name: 'exam-name', component: PickNameView },
+        { path: 'test', name: 'exam-test', component: ExamView },
+        { path: 'result', name: 'exam-result', component: ResultView },
       ],
     },
   ],
