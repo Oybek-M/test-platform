@@ -7,6 +7,8 @@ QUESTION_HEADER_CORRECT = "togri_javob"
 QUESTION_HEADER_TOPIC = "mavzu"
 QUESTION_HEADER_VARIANT_PREFIX = "variant_"
 
+STUDENT_HEADER_ALIASES = {"f.i.sh", "fish", "ism", "full_name", "name", "ism-familiya", "familiya"}
+
 
 def _parse_correct_index(raw, option_count: int) -> int | None:
     if raw is None:
@@ -92,3 +94,44 @@ def parse_questions_xlsx(file_bytes: bytes) -> dict:
         )
 
     return {"questions": questions, "errors": errors}
+
+
+def _build_student_list(names: list[str]) -> dict:
+    students = []
+    warnings = []
+    seen = set()
+    for name in names:
+        key = name.lower()
+        if key in seen:
+            warnings.append(f"Takroriy ism: '{name}'")
+        seen.add(key)
+        students.append(name)
+    return {"students": students, "warnings": warnings}
+
+
+def parse_students_text(text: str) -> dict:
+    """Parse a newline-separated list of full names (spec §7.3)."""
+    names = [line.strip() for line in text.splitlines()]
+    names = [n for n in names if n]
+    return _build_student_list(names)
+
+
+def parse_students_xlsx(file_bytes: bytes) -> dict:
+    """Parse a single-column xlsx of full names (spec §7.3)."""
+    wb = load_workbook(io.BytesIO(file_bytes), read_only=True, data_only=True)
+    ws = wb.active
+    rows = list(ws.iter_rows(values_only=True))
+
+    names = []
+    for row_idx, row in enumerate(rows):
+        val = row[0] if row else None
+        if val is None:
+            continue
+        s = str(val).strip()
+        if not s:
+            continue
+        if row_idx == 0 and s.lower() in STUDENT_HEADER_ALIASES:
+            continue
+        names.append(s)
+
+    return _build_student_list(names)
