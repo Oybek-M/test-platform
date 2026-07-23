@@ -66,3 +66,20 @@ export async function getLiveTotp(id: number): Promise<{ code: string; seconds_l
   const resp = await client.get(`/admin/exams/${id}/totp`)
   return resp.data
 }
+
+export interface AttemptResult {
+  student_id: number
+  student_name: string
+  score: number | null
+  total: number | null
+  percent: number | null
+  grade: string | null
+  started_at: string
+  submitted_at: string | null
+  status: string
+}
+
+export async function getExamResults(id: number): Promise<AttemptResult[]> {
+  const resp = await client.get(`/admin/exams/${id}/results`)
+  return resp.data
+}

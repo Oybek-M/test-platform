@@ -8,6 +8,7 @@ import GroupsView from '../views/admin/GroupsView.vue'
 import ExamsView from '../views/admin/ExamsView.vue'
 import ExamFormView from '../views/admin/ExamFormView.vue'
 import LiveCodeView from '../views/admin/LiveCodeView.vue'
+import ResultsView from '../views/admin/ResultsView.vue'
 import AdminLayout from '../components/AdminLayout.vue'
 import ExamEntryView from '../views/exam/ExamEntryView.vue'
 import PasswordView from '../views/exam/PasswordView.vue'
@@ -33,6 +34,7 @@ const router = createRouter({
         { path: 'exams', name: 'admin-exams', component: ExamsView },
         { path: 'exams/new', name: 'admin-exam-new', component: ExamFormView },
         { path: 'exams/:id/live-code', name: 'admin-exam-live-code', component: LiveCodeView },
+        { path: 'exams/:id/results', name: 'admin-exam-results', component: ResultsView },
       ],
     },
     {
