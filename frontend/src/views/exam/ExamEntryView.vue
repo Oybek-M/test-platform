@@ -27,6 +27,24 @@ onMounted(async () => {
 function proceed() {
   router.push(`/e/${accessCode}/password`)
 }
+
+function closedReason(s: ExamPublicStatus): string {
+  if (s.status === 'draft') {
+    return "Imtihon hali o'qituvchi tomonidan ochilmagan. Iltimos, o'qituvchingizga murojaat qiling."
+  }
+  if (s.status === 'closed') {
+    return 'Imtihon yakunlangan.'
+  }
+  const startsAt = new Date(s.starts_at).getTime()
+  const endsAt = startsAt + s.duration_minutes * 60000
+  if (Date.now() < startsAt) {
+    return `Imtihon hali boshlanmagan. Boshlanish vaqti: ${new Date(s.starts_at).toLocaleString()}`
+  }
+  if (Date.now() > endsAt) {
+    return 'Imtihon vaqti tugagan.'
+  }
+  return 'Imtihon hozircha ochiq emas.'
+}
 </script>
 
 <template>
@@ -37,7 +55,7 @@ function proceed() {
       <h2>{{ status.title }}</h2>
       <p class="muted">{{ status.group_name }}</p>
       <p v-if="!status.is_open_now" class="alert alert-error">
-        Imtihon hozircha ochiq emas. Boshlanish vaqti: {{ new Date(status.starts_at).toLocaleString() }}
+        {{ closedReason(status) }}
       </p>
       <button v-else class="btn" @click="proceed">Boshlash</button>
     </div>
