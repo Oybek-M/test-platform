@@ -1,7 +1,4 @@
-from pathlib import Path
-
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
-from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_admin
@@ -13,8 +10,6 @@ from app.schemas.student import StudentImportResult, StudentOut, StudentTextImpo
 from app.services.imports import parse_students_text, parse_students_xlsx
 
 router = APIRouter(prefix="/api/admin", tags=["admin-groups"], dependencies=[Depends(get_current_admin)])
-
-SAMPLES_DIR = Path(__file__).resolve().parent.parent.parent / "templates" / "samples"
 
 
 def _get_group_or_404(group_id: int, db: Session) -> Group:
@@ -103,13 +98,3 @@ async def add_students_from_xlsx(group_id: int, file: UploadFile = File(...), db
     content = await file.read()
     result = parse_students_xlsx(content)
     return _persist_students(group_id, result["students"], result["warnings"], db)
-
-
-@router.get("/samples/students.xlsx")
-def download_students_sample():
-    file_path = SAMPLES_DIR / "students_template.xlsx"
-    return FileResponse(
-        path=file_path,
-        filename="students_template.xlsx",
-        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    )

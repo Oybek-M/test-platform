@@ -82,3 +82,10 @@ def test_download_students_sample(client, auth_headers):
     resp = client.get("/api/admin/samples/students.xlsx", headers=auth_headers)
     assert resp.status_code == 200
     assert resp.headers["content-type"].startswith("application/vnd.openxmlformats")
+
+
+def test_download_students_sample_without_auth(client):
+    # Sample downloads are plain <a href> links in the UI - browsers can't attach
+    # a Bearer token to those, so this route must not require authentication.
+    resp = client.get("/api/admin/samples/students.xlsx")
+    assert resp.status_code == 200

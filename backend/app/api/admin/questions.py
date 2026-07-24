@@ -1,7 +1,4 @@
-from pathlib import Path
-
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
-from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_admin
@@ -18,8 +15,6 @@ from app.schemas.question import (
 from app.services.imports import parse_questions_xlsx
 
 router = APIRouter(prefix="/api/admin", tags=["admin-questions"], dependencies=[Depends(get_current_admin)])
-
-SAMPLES_DIR = Path(__file__).resolve().parent.parent.parent / "templates" / "samples"
 
 
 def _get_course_or_404(course_id: int, db: Session) -> Course:
@@ -139,13 +134,3 @@ async def import_questions(
         created.append(question)
     db.commit()
     return QuestionImportResult(imported=len(created))
-
-
-@router.get("/samples/questions.xlsx")
-def download_questions_sample():
-    file_path = SAMPLES_DIR / "questions_template.xlsx"
-    return FileResponse(
-        path=file_path,
-        filename="questions_template.xlsx",
-        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    )
