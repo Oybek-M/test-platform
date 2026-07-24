@@ -18,7 +18,7 @@ services:
       DATABASE_URL: postgresql+psycopg2://test_platform:${POSTGRES_PASSWORD}@postgres:5432/test_platform
       JWT_SECRET: ${JWT_SECRET}
       JWT_EXPIRE_MINUTES: 720
-      CORS_ORIGINS: https://test.2007.uz
+      CORS_ORIGINS: https://test.ibos.uz,http://test.ibos.uz,https://test.2007.uz
     ports:
       - "127.0.0.1:8001:8000"
 
