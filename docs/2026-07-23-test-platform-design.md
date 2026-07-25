@@ -4,7 +4,7 @@
 - **Muallif:** Oybek + Claude (brainstorming)
 - **Holat:** Tasdiqlangan dizayn → implementation plan yoziladi
 - **Loyiha papkasi:** `C:\Users\Oybek\Documents\Projects programming\DC\test-platform`
-- **Domain (vaqtincha):** `test.2007.uz` subdomain (Contabo VPS)
+- **Domain (vaqtincha):** `test.2007.uz` subdomain (Contabo VPS) — *2026-07-24 yangilanish: `2007.uz` `.uz` registrida faollashtirilishini kutmoqda, shuning uchun production hozircha `test.ibos.uz` orqali ishlaydi; `2007.uz` faollashgach almashtiriladi.*
 - **Muhim:** Bu loyiha iBOS/UFL startaplariga aloqasi yo'q. Mustaqil, shaxsiy foydalanish uchun.
 
 ---

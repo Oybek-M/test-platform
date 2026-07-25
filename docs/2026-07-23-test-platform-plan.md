@@ -12,6 +12,16 @@
 
 ---
 
+## Holat (2026-07-24)
+
+- **Faza 1 — ✅ to'liq tugallandi.** Barcha 18 task bajarildi, 76 pytest test o'tadi, frontend build toza, to'liq uchma-uch ssenariy (Task 1.18 acceptance) tasdiqlangan.
+- **Faza 2 — 2.4/2.5/2.6 (Docker + VPS diagnostika + deploy+TLS) ✅ tugallandi.** Production'da ishlaydi: Docker Compose (backend+postgres) + Nginx + certbot. Reja `test.2007.uz`ni ko'zda tutgan edi, lekin domen `.uz` registrida faollashtirilishini kutayotgani sababli **`test.ibos.uz`** vaqtinchalik domen sifatida ishlatildi (nginx ikkala nomni ham qabul qiladi, `test.2007.uz` faollashgach certbot bilan qo'shiladi).
+- **Faza 2 — 2.1/2.2/2.3 (docx import, xlsx eksport, sozlamalar sayqali) hali boshlanmagan.**
+- **Faza 3 — hali boshlanmagan.**
+- Deploy jarayonida topilgan va tuzatilgan qo'shimcha xatolar (planga kiritilmagan, real foydalanishda chiqqan): namuna-fayl yuklab olish havolalari admin-JWT talab qilardi (brauzer `<a href>` orqali token yubora olmaydi) — alohida autentifikatsiyasiz `/api/admin/samples/*` router'iga ko'chirildi; imtihon kirish sahifasidagi "hali ochiq emas" xabari draft/closed/vaqt-kelmagan/vaqt-tugagan holatlarini farqlamas edi — aniqlashtirildi.
+
+---
+
 ## Umumiy tamoyillar (butun plan bo'yicha)
 
 - **DRY, YAGNI, TDD (backend mantig'i uchun):** grading, TOTP verify, import parser, exam start/submit mantig'iga pytest testlari yoziladi. UI komponentlariga qat'iy TDD shart emas — qo'lda/integration checkpoint bilan tekshiriladi.
