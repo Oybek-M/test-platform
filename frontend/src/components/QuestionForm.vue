@@ -8,6 +8,7 @@ const emit = defineEmits<{
   submit: [payload: { text: string; options: string[]; correct_index: number; topic?: string }]
   cancel: []
 }>()
+const message = useMessage()
 
 const text = ref(props.initial?.text || '')
 const options = ref<string[]>(props.initial?.options ? [...props.initial.options] : ['', ''])
@@ -28,9 +29,18 @@ function removeOption(i: number) {
 }
 
 function submit() {
+  const trimmedOptions = options.value.filter((o) => o.trim() !== '')
+  if (!text.value.trim()) {
+    message.warning('Savol matnini kiriting')
+    return
+  }
+  if (trimmedOptions.length < 2) {
+    message.warning('Kamida 2 ta variant kiriting')
+    return
+  }
   emit('submit', {
     text: text.value,
-    options: options.value.filter((o) => o.trim() !== ''),
+    options: trimmedOptions,
     correct_index: correctIndex.value,
     topic: topic.value || undefined,
   })
@@ -38,39 +48,26 @@ function submit() {
 </script>
 
 <template>
-  <form @submit.prevent="submit">
-    <div class="form-group">
-      <label>Savol matni</label>
-      <textarea v-model="text" required rows="2"></textarea>
-    </div>
-    <div class="form-group">
-      <label>Variantlar (to'g'ri javobni belgilang)</label>
-      <div
-        v-for="(_, i) in options"
-        :key="i"
-        style="display: flex; gap: 0.5rem; margin-bottom: 0.4rem; align-items: center;"
-      >
-        <input type="radio" name="correct-option" :checked="correctIndex === i" @change="correctIndex = i" />
-        <input
-          v-model="options[i]"
-          type="text"
-          required
-          style="flex: 1; width: auto; min-width: 0;"
-          :placeholder="`Variant ${i + 1}`"
-        />
-        <button v-if="options.length > 2" type="button" class="btn btn-danger" @click="removeOption(i)">X</button>
+  <n-form :label-width="0">
+    <n-form-item label="Savol matni">
+      <n-input v-model:value="text" type="textarea" :rows="2" />
+    </n-form-item>
+    <n-form-item label="Variantlar (to'g'ri javobni belgilang)">
+      <div style="width: 100%;">
+        <n-space v-for="(_, i) in options" :key="i" align="center" style="margin-bottom: 0.5rem; width: 100%;">
+          <input type="radio" name="correct-option" :checked="correctIndex === i" @change="correctIndex = i" />
+          <n-input v-model:value="options[i]" :placeholder="`Variant ${i + 1}`" style="flex: 1;" />
+          <n-button v-if="options.length > 2" type="error" quaternary @click="removeOption(i)">X</n-button>
+        </n-space>
+        <n-button v-if="options.length < 6" dashed @click="addOption">+ Variant qo'shish</n-button>
       </div>
-      <button v-if="options.length < 6" type="button" class="btn btn-secondary" @click="addOption">
-        + Variant qo'shish
-      </button>
-    </div>
-    <div class="form-group">
-      <label>Mavzu (ixtiyoriy)</label>
-      <input v-model="topic" type="text" />
-    </div>
-    <div style="display: flex; gap: 0.5rem;">
-      <button class="btn" type="submit">Saqlash</button>
-      <button class="btn btn-secondary" type="button" @click="emit('cancel')">Bekor qilish</button>
-    </div>
-  </form>
+    </n-form-item>
+    <n-form-item label="Mavzu (ixtiyoriy)">
+      <n-input v-model:value="topic" />
+    </n-form-item>
+    <n-space>
+      <n-button type="primary" @click="submit">Saqlash</n-button>
+      <n-button @click="emit('cancel')">Bekor qilish</n-button>
+    </n-space>
+  </n-form>
 </template>

@@ -6,15 +6,15 @@ import { listGroups, type Group } from '../../api/groups'
 import { createExam } from '../../api/exams'
 
 const router = useRouter()
+const message = useMessage()
 const courses = ref<Course[]>([])
 const groups = ref<Group[]>([])
-const error = ref('')
 const loading = ref(false)
 
 const courseId = ref<number | null>(null)
 const groupId = ref<number | null>(null)
 const title = ref('')
-const startsAt = ref('')
+const startsAtTimestamp = ref<number | null>(null)
 const durationMinutes = ref(30)
 const questionCount = ref(10)
 const shuffleQuestions = ref(true)
@@ -39,15 +39,14 @@ watch(
 )
 
 async function submit() {
-  if (!courseId.value || !groupId.value) return
-  error.value = ''
+  if (!courseId.value || !groupId.value || !startsAtTimestamp.value) return
   loading.value = true
   try {
     const exam = await createExam({
       course_id: courseId.value,
       group_id: groupId.value,
       title: title.value,
-      starts_at: new Date(startsAt.value).toISOString(),
+      starts_at: new Date(startsAtTimestamp.value).toISOString(),
       duration_minutes: durationMinutes.value,
       question_count: questionCount.value,
       shuffle_questions: shuffleQuestions.value,
@@ -59,7 +58,7 @@ async function submit() {
     })
     router.push(`/admin/exams/${exam.id}/live-code`)
   } catch (e: any) {
-    error.value = e?.response?.data?.detail || "Imtihon yaratib bo'lmadi"
+    message.error(e?.response?.data?.detail || "Imtihon yaratib bo'lmadi")
   } finally {
     loading.value = false
   }
@@ -70,65 +69,46 @@ async function submit() {
   <div>
     <router-link to="/admin/exams" class="muted">&larr; Imtihonlarga qaytish</router-link>
     <h2>Yangi imtihon</h2>
-    <div v-if="error" class="alert alert-error">{{ error }}</div>
-    <form @submit.prevent="submit" class="card" style="max-width: 500px;">
-      <div class="form-group">
-        <label>Kurs</label>
-        <select v-model.number="courseId">
-          <option v-for="c in courses" :key="c.id" :value="c.id">{{ c.name }}</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Guruh</label>
-        <select v-model.number="groupId">
-          <option v-for="g in groups" :key="g.id" :value="g.id">{{ g.name }}</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Sarlavha</label>
-        <input v-model="title" type="text" required />
-      </div>
-      <div class="form-group">
-        <label>Boshlanish sanasi va vaqti</label>
-        <input v-model="startsAt" type="datetime-local" required />
-      </div>
-      <div class="form-group">
-        <label>Davomiyligi (daqiqa)</label>
-        <input v-model.number="durationMinutes" type="number" min="1" required />
-      </div>
-      <div class="form-group">
-        <label>Savollar soni</label>
-        <input v-model.number="questionCount" type="number" min="1" required />
-      </div>
-      <div class="form-group">
-        <label><input type="checkbox" v-model="shuffleQuestions" /> Savollarni aralashtirish</label>
-      </div>
-      <div class="form-group">
-        <label><input type="checkbox" v-model="shuffleOptions" /> Variantlarni aralashtirish</label>
-      </div>
-      <div class="form-group">
-        <label><input type="checkbox" v-model="allowResume" /> Qayta kirishga ruxsat</label>
-      </div>
-      <div class="form-group">
-        <label><input type="checkbox" v-model="showResult" /> Natijani o'quvchiga ko'rsatish</label>
-      </div>
-      <div class="form-group">
-        <label>Parol uzunligi</label>
-        <select v-model.number="totpDigits">
-          <option :value="4">4 xonali</option>
-          <option :value="6">6 xonali</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Parol almashish davri</label>
-        <select v-model.number="totpPeriod">
-          <option :value="30">30 soniya</option>
-          <option :value="60">60 soniya</option>
-        </select>
-      </div>
-      <button class="btn" type="submit" :disabled="loading">
-        {{ loading ? 'Yaratilmoqda...' : 'Yaratish' }}
-      </button>
-    </form>
+    <n-card style="max-width: 500px;">
+      <n-form :label-width="180">
+        <n-form-item label="Kurs">
+          <n-select v-model:value="courseId" :options="courses.map((c) => ({ label: c.name, value: c.id }))" />
+        </n-form-item>
+        <n-form-item label="Guruh">
+          <n-select v-model:value="groupId" :options="groups.map((g) => ({ label: g.name, value: g.id }))" />
+        </n-form-item>
+        <n-form-item label="Sarlavha">
+          <n-input v-model:value="title" />
+        </n-form-item>
+        <n-form-item label="Boshlanish sanasi va vaqti">
+          <n-date-picker v-model:value="startsAtTimestamp" type="datetime" style="width: 100%;" clearable />
+        </n-form-item>
+        <n-form-item label="Davomiyligi (daqiqa)">
+          <n-input-number v-model:value="durationMinutes" :min="1" style="width: 100%;" />
+        </n-form-item>
+        <n-form-item label="Savollar soni">
+          <n-input-number v-model:value="questionCount" :min="1" style="width: 100%;" />
+        </n-form-item>
+        <n-form-item>
+          <n-checkbox v-model:checked="shuffleQuestions">Savollarni aralashtirish</n-checkbox>
+        </n-form-item>
+        <n-form-item>
+          <n-checkbox v-model:checked="shuffleOptions">Variantlarni aralashtirish</n-checkbox>
+        </n-form-item>
+        <n-form-item>
+          <n-checkbox v-model:checked="allowResume">Qayta kirishga ruxsat</n-checkbox>
+        </n-form-item>
+        <n-form-item>
+          <n-checkbox v-model:checked="showResult">Natijani o'quvchiga ko'rsatish</n-checkbox>
+        </n-form-item>
+        <n-form-item label="Parol uzunligi">
+          <n-select v-model:value="totpDigits" :options="[{ label: '4 xonali', value: 4 }, { label: '6 xonali', value: 6 }]" />
+        </n-form-item>
+        <n-form-item label="Parol almashish davri">
+          <n-select v-model:value="totpPeriod" :options="[{ label: '30 soniya', value: 30 }, { label: '60 soniya', value: 60 }]" />
+        </n-form-item>
+        <n-button type="primary" :loading="loading" @click="submit">Yaratish</n-button>
+      </n-form>
+    </n-card>
   </div>
 </template>

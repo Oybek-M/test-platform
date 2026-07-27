@@ -62,28 +62,22 @@ async function doSubmit() {
 </script>
 
 <template>
-  <div class="container" style="max-width: 640px;">
+  <div style="max-width: 640px; margin: 0 auto; padding: 1.5rem 1rem;">
     <div
-      style="position: sticky; top: 0; background: var(--color-bg); padding: 0.75rem 0; display: flex; justify-content: space-between; align-items: center;"
+      style="position: sticky; top: 0; background: var(--n-body-color, #f8fafc); padding: 0.75rem 0; display: flex; justify-content: space-between; align-items: center; z-index: 10;"
     >
       <strong>Qolgan vaqt: {{ minutes }}:{{ seconds.toString().padStart(2, '0') }}</strong>
-      <button class="btn" :disabled="submitting" @click="doSubmit">Topshirish</button>
+      <n-button type="primary" :disabled="submitting" @click="doSubmit">Topshirish</n-button>
     </div>
-    <div v-if="error" class="alert alert-error">{{ error }}</div>
+    <n-alert v-if="error" type="error" style="margin-bottom: 1rem;">{{ error }}</n-alert>
 
-    <div v-for="(q, qi) in examStore.questions" :key="q.id" class="card">
+    <n-card v-for="(q, qi) in examStore.questions" :key="q.id" style="margin-bottom: 1rem;">
       <p><strong>{{ qi + 1 }}. {{ q.text }}</strong></p>
-      <div v-for="(opt, oi) in q.options" :key="oi" style="margin-bottom: 0.4rem;">
-        <label style="display: flex; gap: 0.5rem; align-items: center; cursor: pointer;">
-          <input
-            type="radio"
-            :name="`q-${q.id}`"
-            :checked="examStore.answers[q.id] === oi"
-            @change="selectAnswer(q.id, oi)"
-          />
-          {{ opt }}
-        </label>
-      </div>
-    </div>
+      <n-radio-group :value="examStore.answers[q.id]" @update:value="(v: number) => selectAnswer(q.id, v)">
+        <n-space vertical>
+          <n-radio v-for="(opt, oi) in q.options" :key="oi" :value="oi">{{ opt }}</n-radio>
+        </n-space>
+      </n-radio-group>
+    </n-card>
   </div>
 </template>

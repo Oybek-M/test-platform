@@ -4,10 +4,12 @@ import { listCourses, type Course } from '../../api/courses'
 import { listGroups, createGroup, deleteGroup, listStudents, type Group, type Student } from '../../api/groups'
 import StudentImport from '../../components/StudentImport.vue'
 
+const message = useMessage()
+const dialog = useDialog()
+
 const courses = ref<Course[]>([])
 const selectedCourseId = ref<number | null>(null)
 const groups = ref<Group[]>([])
-const error = ref('')
 const newGroupName = ref('')
 
 const expandedGroupId = ref<number | null>(null)
@@ -28,21 +30,34 @@ async function loadGroups(courseId: number) {
   try {
     groups.value = await listGroups(courseId)
   } catch (e: any) {
-    error.value = e?.response?.data?.detail || "Guruhlarni yuklab bo'lmadi"
+    message.error(e?.response?.data?.detail || "Guruhlarni yuklab bo'lmadi")
   }
 }
 
 async function addGroup() {
   if (!selectedCourseId.value || !newGroupName.value.trim()) return
-  await createGroup({ course_id: selectedCourseId.value, name: newGroupName.value })
-  newGroupName.value = ''
-  await loadGroups(selectedCourseId.value)
+  try {
+    await createGroup({ course_id: selectedCourseId.value, name: newGroupName.value })
+    newGroupName.value = ''
+    message.success("Guruh qo'shildi")
+    await loadGroups(selectedCourseId.value)
+  } catch (e: any) {
+    message.error(e?.response?.data?.detail || "Guruh yaratib bo'lmadi")
+  }
 }
 
-async function removeGroup(id: number) {
-  if (!confirm("Guruhni o'chirishni tasdiqlaysizmi?")) return
-  await deleteGroup(id)
-  if (selectedCourseId.value) await loadGroups(selectedCourseId.value)
+function confirmRemoveGroup(group: Group) {
+  dialog.warning({
+    title: "Guruhni o'chirish",
+    content: `"${group.name}" guruhini o'chirishni tasdiqlaysizmi?`,
+    positiveText: "O'chirish",
+    negativeText: 'Bekor qilish',
+    onPositiveClick: async () => {
+      await deleteGroup(group.id)
+      message.success("Guruh o'chirildi")
+      if (selectedCourseId.value) await loadGroups(selectedCourseId.value)
+    },
+  })
 }
 
 async function toggleExpand(groupId: number) {
@@ -66,55 +81,48 @@ function onStudentsImported(groupId: number) {
 <template>
   <div>
     <h2>Guruhlar</h2>
-    <div v-if="error" class="alert alert-error">{{ error }}</div>
 
-    <div class="card">
-      <div class="form-group">
-        <label>Kurs</label>
-        <select v-model.number="selectedCourseId">
-          <option v-for="c in courses" :key="c.id" :value="c.id">{{ c.name }}</option>
-        </select>
-      </div>
-      <form @submit.prevent="addGroup" style="display: flex; gap: 0.5rem; align-items: end;">
-        <div class="form-group" style="margin-bottom: 0; flex: 1;">
-          <label>Yangi guruh nomi</label>
-          <input v-model="newGroupName" type="text" required />
-        </div>
-        <button class="btn" type="submit">Qo'shish</button>
-      </form>
-    </div>
+    <n-card style="margin-bottom: 1rem;">
+      <n-form-item label="Kurs">
+        <n-select
+          v-model:value="selectedCourseId"
+          :options="courses.map((c) => ({ label: c.name, value: c.id }))"
+        />
+      </n-form-item>
+      <n-space align="end">
+        <n-form-item label="Yangi guruh nomi" style="margin-bottom: 0; flex: 1;">
+          <n-input v-model:value="newGroupName" @keyup.enter="addGroup" />
+        </n-form-item>
+        <n-button type="primary" @click="addGroup">Qo'shish</n-button>
+      </n-space>
+    </n-card>
 
-    <div v-for="g in groups" :key="g.id" class="card">
+    <n-card v-for="g in groups" :key="g.id" style="margin-bottom: 1rem;">
       <div style="display: flex; justify-content: space-between; align-items: center;">
-        <h3>{{ g.name }}</h3>
-        <div style="display: flex; gap: 0.5rem;">
-          <button class="btn btn-secondary" @click="toggleExpand(g.id)">
+        <h3 style="margin: 0;">{{ g.name }}</h3>
+        <n-space>
+          <n-button secondary @click="toggleExpand(g.id)">
             {{ expandedGroupId === g.id ? 'Yopish' : "O'quvchilar" }}
-          </button>
-          <button class="btn btn-danger" @click="removeGroup(g.id)">O'chirish</button>
-        </div>
+          </n-button>
+          <n-button type="error" secondary @click="confirmRemoveGroup(g)">O'chirish</n-button>
+        </n-space>
       </div>
 
-      <div
-        v-if="expandedGroupId === g.id"
-        style="margin-top: 1rem; border-top: 1px solid var(--color-border); padding-top: 1rem;"
-      >
+      <div v-if="expandedGroupId === g.id" style="margin-top: 1rem; border-top: 1px solid rgba(128,128,128,0.2); padding-top: 1rem;">
         <StudentImport :group-id="g.id" @imported="onStudentsImported(g.id)" />
-        <table style="margin-top: 1rem;">
+        <n-table style="margin-top: 1rem;" single-line>
           <thead>
-            <tr>
-              <th>F.I.Sh</th>
-            </tr>
+            <tr><th>F.I.Sh</th></tr>
           </thead>
           <tbody>
             <tr v-for="s in studentsByGroup[g.id] || []" :key="s.id">
               <td>{{ s.full_name }}</td>
             </tr>
           </tbody>
-        </table>
-        <p v-if="(studentsByGroup[g.id] || []).length === 0" class="muted">Hozircha o'quvchilar yo'q.</p>
+        </n-table>
+        <n-empty v-if="(studentsByGroup[g.id] || []).length === 0" description="Hozircha o'quvchilar yo'q" style="margin-top: 1rem;" />
       </div>
-    </div>
-    <p v-if="groups.length === 0" class="muted">Bu kursda guruhlar yo'q.</p>
+    </n-card>
+    <n-empty v-if="groups.length === 0" description="Bu kursda guruhlar yo'q" />
   </div>
 </template>
