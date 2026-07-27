@@ -10,6 +10,7 @@ import {
 } from '../../api/questions'
 import QuestionForm from '../../components/QuestionForm.vue'
 import ImportDialog from '../../components/ImportDialog.vue'
+import Modal from '../../components/Modal.vue'
 
 const route = useRoute()
 const courseId = computed(() => Number(route.params.courseId))
@@ -98,14 +99,14 @@ function onImported() {
 
     <ImportDialog v-if="showImport" :course-id="courseId" @imported="onImported" @close="showImport = false" />
 
-    <div v-if="showForm" class="card">
+    <Modal v-if="showForm" @close="showForm = false">
       <h3>{{ editingQuestion ? 'Savolni tahrirlash' : 'Yangi savol' }}</h3>
       <QuestionForm
         :initial="editingQuestion || undefined"
         @submit="handleSubmit"
         @cancel="showForm = false"
       />
-    </div>
+    </Modal>
 
     <div class="card" v-if="loading">Yuklanmoqda...</div>
 

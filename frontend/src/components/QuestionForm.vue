@@ -51,7 +51,13 @@ function submit() {
         style="display: flex; gap: 0.5rem; margin-bottom: 0.4rem; align-items: center;"
       >
         <input type="radio" name="correct-option" :checked="correctIndex === i" @change="correctIndex = i" />
-        <input v-model="options[i]" type="text" required style="flex: 1;" :placeholder="`Variant ${i + 1}`" />
+        <input
+          v-model="options[i]"
+          type="text"
+          required
+          style="flex: 1; width: auto; min-width: 0;"
+          :placeholder="`Variant ${i + 1}`"
+        />
         <button v-if="options.length > 2" type="button" class="btn btn-danger" @click="removeOption(i)">X</button>
       </div>
       <button v-if="options.length < 6" type="button" class="btn btn-secondary" @click="addOption">
