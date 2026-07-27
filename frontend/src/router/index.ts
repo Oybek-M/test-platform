@@ -1,20 +1,21 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
-import LoginView from '../views/admin/LoginView.vue'
-import ProfileView from '../views/admin/ProfileView.vue'
-import CoursesView from '../views/admin/CoursesView.vue'
-import QuestionsView from '../views/admin/QuestionsView.vue'
-import GroupsView from '../views/admin/GroupsView.vue'
-import ExamsView from '../views/admin/ExamsView.vue'
-import ExamFormView from '../views/admin/ExamFormView.vue'
-import LiveCodeView from '../views/admin/LiveCodeView.vue'
-import ResultsView from '../views/admin/ResultsView.vue'
-import AdminLayout from '../components/AdminLayout.vue'
-import ExamEntryView from '../views/exam/ExamEntryView.vue'
-import PasswordView from '../views/exam/PasswordView.vue'
-import PickNameView from '../views/exam/PickNameView.vue'
-import ExamView from '../views/exam/ExamView.vue'
-import ResultView from '../views/exam/ResultView.vue'
+
+const LoginView = () => import('../views/admin/LoginView.vue')
+const ProfileView = () => import('../views/admin/ProfileView.vue')
+const CoursesView = () => import('../views/admin/CoursesView.vue')
+const QuestionsView = () => import('../views/admin/QuestionsView.vue')
+const GroupsView = () => import('../views/admin/GroupsView.vue')
+const ExamsView = () => import('../views/admin/ExamsView.vue')
+const ExamFormView = () => import('../views/admin/ExamFormView.vue')
+const LiveCodeView = () => import('../views/admin/LiveCodeView.vue')
+const ResultsView = () => import('../views/admin/ResultsView.vue')
+const AdminLayout = () => import('../components/AdminLayout.vue')
+const ExamEntryView = () => import('../views/exam/ExamEntryView.vue')
+const PasswordView = () => import('../views/exam/PasswordView.vue')
+const PickNameView = () => import('../views/exam/PickNameView.vue')
+const ExamView = () => import('../views/exam/ExamView.vue')
+const ResultView = () => import('../views/exam/ResultView.vue')
 
 const router = createRouter({
   history: createWebHistory(),

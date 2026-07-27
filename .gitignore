@@ -19,6 +19,8 @@ node_modules/
 dist/
 .vite/
 *.local
+frontend/auto-imports.d.ts
+frontend/components.d.ts
 
 # --- Import/eksport vaqtinchalik fayllari ---
 uploads/
