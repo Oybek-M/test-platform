@@ -38,15 +38,18 @@ def _as_aware_utc(dt: datetime) -> datetime:
     return dt if dt.tzinfo is not None else dt.replace(tzinfo=timezone.utc)
 
 
-def _exam_window_end(exam: Exam) -> datetime:
-    return _as_aware_utc(exam.starts_at) + timedelta(minutes=exam.duration_minutes)
-
-
 def _is_open_now(exam: Exam) -> bool:
+    # Entry is gated purely by starts_at + the admin-controlled open/closed status - there is
+    # no fixed global end time. Each student's own deadline is their personal started_at +
+    # duration (see /start, /submit), so a student who enters late still gets the full
+    # duration instead of having it silently truncated by a shared window.
     if exam.status != "open":
         return False
-    now = datetime.now(timezone.utc)
-    return _as_aware_utc(exam.starts_at) <= now <= _exam_window_end(exam)
+    return _as_aware_utc(exam.starts_at) <= datetime.now(timezone.utc)
+
+
+def _attempt_deadline(exam: Exam, attempt: Attempt) -> datetime:
+    return _as_aware_utc(attempt.started_at) + timedelta(minutes=exam.duration_minutes)
 
 
 def _verify_or_403(exam: Exam, code: str) -> None:
@@ -106,8 +109,6 @@ def list_available_students(access_code: str, code: str, db: Session = Depends(g
 @router.post("/{access_code}/start", response_model=StartExamResponse)
 def start_exam(access_code: str, payload: StartExamRequest, db: Session = Depends(get_db)):
     exam = _get_exam_by_code_or_404(access_code, db)
-    if not _is_open_now(exam):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Exam is not open right now")
     _verify_or_403(exam, payload.code)
 
     student = (
@@ -126,8 +127,13 @@ def start_exam(access_code: str, payload: StartExamRequest, db: Session = Depend
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Attempt already completed")
 
     if existing is not None and existing.status == "in_progress":
+        # Resuming an already-started attempt (e.g. after a page reload) must not be blocked
+        # by the admin closing the exam to new entries - the student already has their own
+        # deadline (started_at + duration) and should be able to finish it regardless.
         attempt = existing
     else:
+        if not _is_open_now(exam):
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Exam is not open right now")
         active_questions = (
             db.query(Question)
             .filter(Question.course_id == exam.course_id, Question.is_active.is_(True), Question.is_deleted.is_(False))
@@ -153,7 +159,7 @@ def start_exam(access_code: str, payload: StartExamRequest, db: Session = Depend
         db.commit()
         db.refresh(attempt)
 
-    ends_at = min(_exam_window_end(exam), _as_aware_utc(attempt.started_at) + timedelta(minutes=exam.duration_minutes))
+    ends_at = _attempt_deadline(exam, attempt)
     return StartExamResponse(
         attempt_id=attempt.id,
         ends_at=ends_at,
@@ -171,7 +177,7 @@ def submit_exam(access_code: str, payload: SubmitExamRequest, db: Session = Depe
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Attempt already submitted")
 
     now = datetime.now(timezone.utc)
-    deadline = min(_exam_window_end(exam), _as_aware_utc(attempt.started_at) + timedelta(minutes=exam.duration_minutes))
+    deadline = _attempt_deadline(exam, attempt)
     expired = now > deadline
 
     score, total = exam_engine.grade_attempt(attempt.question_snapshot, payload.answers)

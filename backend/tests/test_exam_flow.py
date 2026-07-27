@@ -146,6 +146,57 @@ def test_reentry_blocked_after_submit_when_resume_disabled(client, auth_headers)
     assert retry.status_code == 409
 
 
+def test_late_entry_gets_full_duration_not_truncated_by_shared_window(client, auth_headers):
+    # starts_at is far enough in the past that the old shared start+duration window would
+    # have already closed - a late student must still get their own full duration from the
+    # moment they actually start, not be capped by that shared window.
+    exam_id, access_code = _setup_full_exam(
+        client,
+        auth_headers,
+        starts_at=(datetime.now(timezone.utc) - timedelta(minutes=25)).isoformat(),
+        duration_minutes=10,
+    )
+    code = _current_code(client, auth_headers, exam_id)
+    students = client.get(f"/api/exam/{access_code}/students", params={"code": code}).json()
+
+    start = client.post(
+        f"/api/exam/{access_code}/start", json={"student_id": students[0]["id"], "code": code}
+    )
+    assert start.status_code == 200
+    ends_at = datetime.fromisoformat(start.json()["ends_at"].replace("Z", "+00:00"))
+    assert ends_at > datetime.now(timezone.utc)
+
+
+def test_resume_allowed_after_exam_closed_by_admin(client, auth_headers):
+    exam_id, access_code = _setup_full_exam(client, auth_headers, allow_resume=True)
+    code = _current_code(client, auth_headers, exam_id)
+    students = client.get(f"/api/exam/{access_code}/students", params={"code": code}).json()
+    student_id = students[0]["id"]
+
+    first = client.post(f"/api/exam/{access_code}/start", json={"student_id": student_id, "code": code})
+    assert first.status_code == 200
+    attempt_id = first.json()["attempt_id"]
+
+    client.post(f"/api/admin/exams/{exam_id}/status", headers=auth_headers, json={"status": "closed"})
+
+    resumed = client.post(f"/api/exam/{access_code}/start", json={"student_id": student_id, "code": code})
+    assert resumed.status_code == 200
+    assert resumed.json()["attempt_id"] == attempt_id
+
+
+def test_new_start_rejected_after_exam_closed_by_admin(client, auth_headers):
+    exam_id, access_code = _setup_full_exam(client, auth_headers)
+    code = _current_code(client, auth_headers, exam_id)
+    students = client.get(f"/api/exam/{access_code}/students", params={"code": code}).json()
+
+    client.post(f"/api/admin/exams/{exam_id}/status", headers=auth_headers, json={"status": "closed"})
+
+    resp = client.post(
+        f"/api/exam/{access_code}/start", json={"student_id": students[0]["id"], "code": code}
+    )
+    assert resp.status_code == 403
+
+
 def test_start_rejects_wrong_code(client, auth_headers):
     exam_id, access_code = _setup_full_exam(client, auth_headers)
     students_code = _current_code(client, auth_headers, exam_id)
