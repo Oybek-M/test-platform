@@ -28,6 +28,9 @@ tmp/
 # --- Brainstorming vizual hamroh ---
 .superpowers/
 
+# --- Git worktree'lar ---
+.worktrees/
+
 # --- IDE / OS ---
 .vscode/
 .idea/
