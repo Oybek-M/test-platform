@@ -178,3 +178,58 @@ def test_exam_results_reflects_completed_attempt(client, auth_headers):
     assert results[0]["percent"] == 100
     assert results[0]["grade"] == "A"
     assert results[0]["status"] == "submitted"
+
+
+def test_reopen_attempt_allows_student_to_retake(client, auth_headers):
+    course_id = _create_course(client, auth_headers)
+    group_id = _create_group(client, auth_headers, course_id)
+    client.post(
+        f"/api/admin/groups/{group_id}/students", headers=auth_headers, json={"text": "Aliyev Vali"}
+    )
+    _add_questions(client, auth_headers, course_id, 3)
+
+    payload = _exam_payload(
+        course_id,
+        group_id,
+        question_count=3,
+        starts_at=(datetime.now(timezone.utc) - timedelta(minutes=1)).isoformat(),
+    )
+    create = client.post("/api/admin/exams", headers=auth_headers, json=payload)
+    exam_id = create.json()["id"]
+    access_code = create.json()["access_code"]
+    client.post(f"/api/admin/exams/{exam_id}/status", headers=auth_headers, json={"status": "open"})
+
+    code = client.get(f"/api/admin/exams/{exam_id}/totp", headers=auth_headers).json()["code"]
+    student_id = client.get(f"/api/exam/{access_code}/students", params={"code": code}).json()[0]["id"]
+
+    start = client.post(f"/api/exam/{access_code}/start", json={"student_id": student_id, "code": code})
+    answers = {q["id"]: 0 for q in start.json()["questions"]}
+    client.post(
+        f"/api/exam/{access_code}/submit",
+        json={"attempt_id": start.json()["attempt_id"], "answers": answers},
+    )
+
+    # completed - blocked from a fresh attempt
+    blocked = client.post(f"/api/exam/{access_code}/start", json={"student_id": student_id, "code": code})
+    assert blocked.status_code == 409
+
+    reopen = client.delete(f"/api/admin/exams/{exam_id}/attempts/{student_id}", headers=auth_headers)
+    assert reopen.status_code == 204
+
+    retry = client.post(f"/api/exam/{access_code}/start", json={"student_id": student_id, "code": code})
+    assert retry.status_code == 200
+
+    results = client.get(f"/api/admin/exams/{exam_id}/results", headers=auth_headers).json()
+    assert len(results) == 1
+    assert results[0]["status"] == "in_progress"
+
+
+def test_reopen_attempt_404_when_no_attempt_exists(client, auth_headers):
+    course_id = _create_course(client, auth_headers)
+    group_id = _create_group(client, auth_headers, course_id)
+    _add_questions(client, auth_headers, course_id, 5)
+    create = client.post("/api/admin/exams", headers=auth_headers, json=_exam_payload(course_id, group_id))
+    exam_id = create.json()["id"]
+
+    resp = client.delete(f"/api/admin/exams/{exam_id}/attempts/999", headers=auth_headers)
+    assert resp.status_code == 404

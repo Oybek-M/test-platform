@@ -161,6 +161,18 @@ def get_live_totp_code(exam_id: int, db: Session = Depends(get_db)):
     return ExamTotpOut(code=code, seconds_left=seconds_left)
 
 
+@router.delete("/{exam_id}/attempts/{student_id}", status_code=status.HTTP_204_NO_CONTENT)
+def reopen_attempt(exam_id: int, student_id: int, db: Session = Depends(get_db)):
+    exam = _get_exam_or_404(exam_id, db)
+    attempt = (
+        db.query(Attempt).filter(Attempt.exam_id == exam.id, Attempt.student_id == student_id).first()
+    )
+    if attempt is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Attempt not found")
+    db.delete(attempt)
+    db.commit()
+
+
 @router.get("/{exam_id}/results", response_model=list[AttemptResultOut])
 def get_exam_results(exam_id: int, db: Session = Depends(get_db)):
     exam = _get_exam_or_404(exam_id, db)

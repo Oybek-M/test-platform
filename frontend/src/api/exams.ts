@@ -83,3 +83,7 @@ export async function getExamResults(id: number): Promise<AttemptResult[]> {
   const resp = await client.get(`/admin/exams/${id}/results`)
   return resp.data
 }
+
+export async function reopenAttempt(examId: number, studentId: number): Promise<void> {
+  await client.delete(`/admin/exams/${examId}/attempts/${studentId}`)
+}
