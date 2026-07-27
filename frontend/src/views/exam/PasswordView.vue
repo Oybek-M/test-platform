@@ -39,6 +39,8 @@ async function submit() {
       <n-input
         v-model:value="code"
         size="large"
+        inputmode="numeric"
+        autofocus
         style="text-align: center; font-size: 1.5rem; letter-spacing: 0.3rem; margin-bottom: 1rem;"
         @keyup.enter="submit"
       />
