@@ -1,6 +1,8 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, h } from 'vue'
 import { useRoute } from 'vue-router'
+import { NButton } from 'naive-ui'
+import type { DataTableColumns } from 'naive-ui'
 import {
   listQuestions,
   createQuestion,
@@ -10,13 +12,13 @@ import {
 } from '../../api/questions'
 import QuestionForm from '../../components/QuestionForm.vue'
 import ImportDialog from '../../components/ImportDialog.vue'
-import Modal from '../../components/Modal.vue'
 
 const route = useRoute()
 const courseId = computed(() => Number(route.params.courseId))
+const message = useMessage()
+const dialog = useDialog()
 
 const questions = ref<Question[]>([])
-const error = ref('')
 const loading = ref(false)
 
 const topicFilter = ref('')
@@ -31,7 +33,7 @@ async function load() {
       topic: topicFilter.value || undefined,
     })
   } catch (e: any) {
-    error.value = e?.response?.data?.detail || "Savollarni yuklab bo'lmadi"
+    message.error(e?.response?.data?.detail || "Savollarni yuklab bo'lmadi")
   } finally {
     loading.value = false
   }
@@ -50,7 +52,6 @@ function openEditForm(q: Question) {
 }
 
 async function handleSubmit(payload: { text: string; options: string[]; correct_index: number; topic?: string }) {
-  error.value = ''
   try {
     if (editingQuestion.value) {
       await updateQuestion(courseId.value, editingQuestion.value.id, payload)
@@ -59,9 +60,10 @@ async function handleSubmit(payload: { text: string; options: string[]; correct_
     }
     showForm.value = false
     editingQuestion.value = null
+    message.success('Savol saqlandi')
     await load()
   } catch (e: any) {
-    error.value = e?.response?.data?.detail || "Savolni saqlab bo'lmadi"
+    message.error(e?.response?.data?.detail || "Savolni saqlab bo'lmadi")
   }
 }
 
@@ -70,75 +72,85 @@ async function toggleActive(q: Question) {
   await load()
 }
 
-async function removeQuestion(id: number) {
-  if (!confirm("Savolni o'chirishni tasdiqlaysizmi?")) return
-  await deleteQuestion(courseId.value, id)
-  await load()
+function confirmRemove(q: Question) {
+  dialog.warning({
+    title: "Savolni o'chirish",
+    content: "Savolni o'chirishni tasdiqlaysizmi?",
+    positiveText: "O'chirish",
+    negativeText: 'Bekor qilish',
+    onPositiveClick: async () => {
+      await deleteQuestion(courseId.value, q.id)
+      message.success("Savol o'chirildi")
+      await load()
+    },
+  })
 }
 
 function onImported() {
   showImport.value = false
   load()
 }
+
+const columns: DataTableColumns<Question> = [
+  { title: 'Savol', key: 'text' },
+  {
+    title: 'Variantlar',
+    key: 'options',
+    render(row) {
+      return row.options
+        .map((opt, i) => (i === row.correct_index ? `✓ ${opt}` : opt))
+        .join(', ')
+    },
+  },
+  { title: 'Mavzu', key: 'topic', render: (row) => row.topic || '-' },
+  {
+    title: 'Faol',
+    key: 'is_active',
+    render(row) {
+      return h('input', {
+        type: 'checkbox',
+        checked: row.is_active,
+        onChange: () => toggleActive(row),
+      })
+    },
+  },
+  {
+    title: '',
+    key: 'actions',
+    render(row) {
+      return h('div', { style: 'display: flex; gap: 0.5rem;' }, [
+        h(NButton, { secondary: true, onClick: () => openEditForm(row) }, { default: () => 'Tahrirlash' }),
+        h(NButton, { type: 'error', secondary: true, onClick: () => confirmRemove(row) }, { default: () => "O'chirish" }),
+      ])
+    },
+  },
+]
 </script>
 
 <template>
   <div>
     <router-link to="/admin/courses" class="muted">&larr; Kurslarga qaytish</router-link>
     <h2>Savollar</h2>
-    <div v-if="error" class="alert alert-error">{{ error }}</div>
 
-    <div style="display: flex; gap: 0.75rem; margin-bottom: 1rem; align-items: end; flex-wrap: wrap;">
-      <div class="form-group" style="margin-bottom: 0;">
-        <label>Mavzu bo'yicha filtr</label>
-        <input v-model="topicFilter" type="text" @change="load" placeholder="Mavzu..." />
-      </div>
-      <button class="btn" @click="openCreateForm">+ Yangi savol</button>
-      <button class="btn btn-secondary" @click="showImport = !showImport">Xlsx import</button>
-    </div>
+    <n-space align="end" style="margin-bottom: 1rem;">
+      <n-form-item label="Mavzu bo'yicha filtr" style="margin-bottom: 0;">
+        <n-input v-model:value="topicFilter" placeholder="Mavzu..." @keyup.enter="load" />
+      </n-form-item>
+      <n-button type="primary" @click="openCreateForm">+ Yangi savol</n-button>
+      <n-button secondary @click="showImport = !showImport">Xlsx import</n-button>
+    </n-space>
 
     <ImportDialog v-if="showImport" :course-id="courseId" @imported="onImported" @close="showImport = false" />
 
-    <Modal v-if="showForm" @close="showForm = false">
-      <h3>{{ editingQuestion ? 'Savolni tahrirlash' : 'Yangi savol' }}</h3>
+    <n-modal v-model:show="showForm" preset="card" :title="editingQuestion ? 'Savolni tahrirlash' : 'Yangi savol'" style="max-width: 640px;">
       <QuestionForm
         :initial="editingQuestion || undefined"
         @submit="handleSubmit"
         @cancel="showForm = false"
       />
-    </Modal>
+    </n-modal>
 
-    <div class="card" v-if="loading">Yuklanmoqda...</div>
-
-    <table v-if="!loading">
-      <thead>
-        <tr>
-          <th>Savol</th>
-          <th>Variantlar</th>
-          <th>Mavzu</th>
-          <th>Faol</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="q in questions" :key="q.id">
-          <td>{{ q.text }}</td>
-          <td>
-            <span v-for="(opt, i) in q.options" :key="i" :style="i === q.correct_index ? 'font-weight:600;color:var(--color-success);' : ''">
-              {{ opt }}{{ i < q.options.length - 1 ? ', ' : '' }}
-            </span>
-          </td>
-          <td>{{ q.topic || '-' }}</td>
-          <td>
-            <input type="checkbox" :checked="q.is_active" @change="toggleActive(q)" />
-          </td>
-          <td style="white-space: nowrap;">
-            <button class="btn btn-secondary" @click="openEditForm(q)">Tahrirlash</button>
-            <button class="btn btn-danger" @click="removeQuestion(q.id)">O'chirish</button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-    <p v-if="!loading && questions.length === 0" class="muted">Hozircha savollar yo'q.</p>
+    <n-data-table :columns="columns" :data="questions" :loading="loading" :bordered="false" />
+    <n-empty v-if="!loading && questions.length === 0" description="Hozircha savollar yo'q" style="margin-top: 1rem;" />
   </div>
 </template>
