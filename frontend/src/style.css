@@ -1,14 +1,8 @@
 :root {
   --color-bg: #f4f5f7;
-  --color-surface: #ffffff;
-  --color-border: #dcdfe4;
   --color-text: #1f2430;
   --color-text-muted: #6b7280;
   --color-primary: #2f6fed;
-  --color-primary-hover: #2559c4;
-  --color-danger: #e5484d;
-  --color-success: #16a34a;
-  --radius: 8px;
   font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
 }
 
