@@ -6,7 +6,7 @@ const result = examStore.result
 </script>
 
 <template>
-  <div style="max-width: 420px; margin: 0 auto; padding-top: 3rem; text-align: center;">
+  <div style="max-width: 420px; margin: 0 auto; padding: 3rem 1.5rem 1.5rem; text-align: center;">
     <n-card title="Imtihon yakunlandi">
       <template v-if="result && result.percent !== undefined">
         <p style="font-size: 2.5rem; font-weight: 700; margin: 0.5rem 0;">{{ result.percent }}%</p>

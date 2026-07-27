@@ -62,7 +62,7 @@ async function doSubmit() {
 </script>
 
 <template>
-  <div style="max-width: 640px; margin: 0 auto; padding: 0 1rem;">
+  <div style="max-width: 640px; margin: 0 auto; padding: 1.5rem 1rem;">
     <div
       style="position: sticky; top: 0; background: var(--n-body-color, #f8fafc); padding: 0.75rem 0; display: flex; justify-content: space-between; align-items: center; z-index: 10;"
     >
