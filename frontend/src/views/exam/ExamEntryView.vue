@@ -48,16 +48,13 @@ function closedReason(s: ExamPublicStatus): string {
 </script>
 
 <template>
-  <div class="container" style="max-width: 420px; padding-top: 3rem; text-align: center;">
-    <div v-if="loading">Yuklanmoqda...</div>
-    <div v-else-if="error" class="alert alert-error">{{ error }}</div>
-    <div v-else-if="status" class="card">
-      <h2>{{ status.title }}</h2>
-      <p class="muted">{{ status.group_name }}</p>
-      <p v-if="!status.is_open_now" class="alert alert-error">
-        {{ closedReason(status) }}
-      </p>
-      <button v-else class="btn" @click="proceed">Boshlash</button>
-    </div>
+  <div style="max-width: 420px; margin: 0 auto; padding-top: 3rem; text-align: center;">
+    <n-spin v-if="loading" show />
+    <n-alert v-else-if="error" type="error">{{ error }}</n-alert>
+    <n-card v-else-if="status" :title="status.title">
+      <p style="color: var(--n-text-color-3, #6b7280);">{{ status.group_name }}</p>
+      <n-alert v-if="!status.is_open_now" type="error">{{ closedReason(status) }}</n-alert>
+      <n-button v-else type="primary" block @click="proceed">Boshlash</n-button>
+    </n-card>
   </div>
 </template>

@@ -43,7 +43,7 @@ async function selectStudent(student: StudentPublic) {
     if (e?.response?.status === 409) {
       error.value = 'Siz allaqachon imtihonni topshirgansiz'
     } else if (e?.response?.status === 403) {
-      error.value = 'Imtihon hozir ochiq emas yoki parol muddati o\'tgan'
+      error.value = "Imtihon hozir ochiq emas yoki parol muddati o'tgan"
     } else {
       error.value = "Imtihonni boshlab bo'lmadi"
     }
@@ -54,22 +54,24 @@ async function selectStudent(student: StudentPublic) {
 </script>
 
 <template>
-  <div class="container" style="max-width: 420px; padding-top: 3rem;">
+  <div style="max-width: 420px; margin: 0 auto; padding-top: 3rem;">
     <h2>Ismingizni tanlang</h2>
-    <div v-if="error" class="alert alert-error">{{ error }}</div>
-    <div v-if="loading">Yuklanmoqda...</div>
-    <div v-else class="card">
-      <button
-        v-for="s in students"
-        :key="s.id"
-        class="btn btn-secondary"
-        style="display: block; width: 100%; margin-bottom: 0.5rem; text-align: left;"
-        :disabled="starting"
-        @click="selectStudent(s)"
-      >
-        {{ s.full_name }}
-      </button>
-      <p v-if="students.length === 0" class="muted">Ro'yxatda mavjud ism qolmadi.</p>
-    </div>
+    <n-alert v-if="error" type="error" style="margin-bottom: 1rem;">{{ error }}</n-alert>
+    <n-spin :show="loading">
+      <n-space vertical style="width: 100%;">
+        <n-button
+          v-for="s in students"
+          :key="s.id"
+          secondary
+          block
+          style="justify-content: flex-start;"
+          :disabled="starting"
+          @click="selectStudent(s)"
+        >
+          {{ s.full_name }}
+        </n-button>
+      </n-space>
+      <n-empty v-if="!loading && students.length === 0" description="Ro'yxatda mavjud ism qolmadi" />
+    </n-spin>
   </div>
 </template>

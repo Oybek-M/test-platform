@@ -32,24 +32,17 @@ async function submit() {
 </script>
 
 <template>
-  <div class="container" style="max-width: 380px; padding-top: 3rem;">
-    <div class="card">
-      <h2>Parolni kiriting</h2>
-      <p class="muted">O'qituvchi ekranidagi joriy kodni kiriting</p>
-      <div v-if="error" class="alert alert-error">{{ error }}</div>
-      <form @submit.prevent="submit">
-        <div class="form-group">
-          <input
-            v-model="code"
-            type="text"
-            inputmode="numeric"
-            required
-            autofocus
-            style="font-size: 1.5rem; text-align: center; letter-spacing: 0.3rem;"
-          />
-        </div>
-        <button class="btn" type="submit" :disabled="loading" style="width: 100%;">Tasdiqlash</button>
-      </form>
-    </div>
+  <div style="max-width: 380px; margin: 0 auto; padding-top: 3rem;">
+    <n-card title="Parolni kiriting">
+      <p style="color: var(--n-text-color-3, #6b7280);">O'qituvchi ekranidagi joriy kodni kiriting</p>
+      <n-alert v-if="error" type="error" style="margin-bottom: 1rem;">{{ error }}</n-alert>
+      <n-input
+        v-model:value="code"
+        size="large"
+        style="text-align: center; font-size: 1.5rem; letter-spacing: 0.3rem; margin-bottom: 1rem;"
+        @keyup.enter="submit"
+      />
+      <n-button type="primary" block size="large" :loading="loading" @click="submit">Tasdiqlash</n-button>
+    </n-card>
   </div>
 </template>
