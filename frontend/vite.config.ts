@@ -9,6 +9,7 @@ export default defineConfig({
     vue(),
     AutoImport({
       imports: [{ 'naive-ui': ['useDialog', 'useMessage', 'useNotification', 'useLoadingBar'] }],
+      dts: true,
     }),
     Components({
       resolvers: [NaiveUiResolver()],
