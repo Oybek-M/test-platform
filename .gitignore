@@ -25,6 +25,9 @@ uploads/
 tmp/
 *.tmp
 
+# --- Brainstorming vizual hamroh ---
+.superpowers/
+
 # --- IDE / OS ---
 .vscode/
 .idea/
