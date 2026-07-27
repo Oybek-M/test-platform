@@ -1,11 +1,15 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, h } from 'vue'
+import { NButton, NTag } from 'naive-ui'
+import type { DataTableColumns } from 'naive-ui'
 import { listCourses, type Course } from '../../api/courses'
 import { listExams, setExamStatus, deleteExam, type Exam } from '../../api/exams'
 
+const message = useMessage()
+const dialog = useDialog()
+
 const courses = ref<Course[]>([])
 const exams = ref<Exam[]>([])
-const error = ref('')
 
 onMounted(async () => {
   courses.value = await listCourses()
@@ -16,7 +20,7 @@ async function load() {
   try {
     exams.value = await listExams()
   } catch (e: any) {
-    error.value = e?.response?.data?.detail || "Imtihonlarni yuklab bo'lmadi"
+    message.error(e?.response?.data?.detail || "Imtihonlarni yuklab bo'lmadi")
   }
 }
 
@@ -25,14 +29,30 @@ function courseName(id: number) {
 }
 
 async function changeStatus(exam: Exam, status: string) {
-  await setExamStatus(exam.id, status)
-  await load()
+  try {
+    await setExamStatus(exam.id, status)
+    await load()
+  } catch (e: any) {
+    message.error(e?.response?.data?.detail || "Holatni o'zgartirib bo'lmadi")
+  }
 }
 
-async function removeExam(id: number) {
-  if (!confirm("Imtihonni o'chirishni tasdiqlaysizmi?")) return
-  await deleteExam(id)
-  await load()
+function confirmRemove(exam: Exam) {
+  dialog.warning({
+    title: "Imtihonni o'chirish",
+    content: `"${exam.title}" imtihonini o'chirishni tasdiqlaysizmi?`,
+    positiveText: "O'chirish",
+    negativeText: 'Bekor qilish',
+    onPositiveClick: async () => {
+      try {
+        await deleteExam(exam.id)
+        message.success("Imtihon o'chirildi")
+        await load()
+      } catch (e: any) {
+        message.error(e?.response?.data?.detail || "O'chirib bo'lmadi")
+      }
+    },
+  })
 }
 
 function examLink(exam: Exam) {
@@ -41,51 +61,66 @@ function examLink(exam: Exam) {
 
 function copyLink(exam: Exam) {
   navigator.clipboard.writeText(examLink(exam))
+  message.success('Havola nusxalandi')
 }
+
+const columns: DataTableColumns<Exam> = [
+  { title: 'Nomi', key: 'title' },
+  { title: 'Kurs', key: 'course_id', render: (row) => courseName(row.course_id) },
+  { title: 'Boshlanish', key: 'starts_at', render: (row) => new Date(row.starts_at).toLocaleString() },
+  { title: 'Davomiylik', key: 'duration_minutes', render: (row) => `${row.duration_minutes} daq` },
+  {
+    title: 'Holat',
+    key: 'status',
+    render: (row) => h(NTag, { type: row.status === 'open' ? 'success' : 'default' }, { default: () => row.status }),
+  },
+  {
+    title: 'Havola',
+    key: 'link',
+    render: (row) => h(NButton, { size: 'small', secondary: true, onClick: () => copyLink(row) }, { default: () => 'Nusxalash' }),
+  },
+  {
+    title: '',
+    key: 'actions',
+    render(row) {
+      const buttons = []
+      if (row.status !== 'open') {
+        buttons.push(h(NButton, { size: 'small', type: 'primary', onClick: () => changeStatus(row, 'open') }, { default: () => 'Ochish' }))
+      }
+      if (row.status === 'open') {
+        buttons.push(h(NButton, { size: 'small', secondary: true, onClick: () => changeStatus(row, 'closed') }, { default: () => 'Yopish' }))
+      }
+      buttons.push(
+        h(
+          'a',
+          { href: `/admin/exams/${row.id}/live-code`, style: 'text-decoration:none;' },
+          h(NButton, { size: 'small', secondary: true }, { default: () => 'Kod' }),
+        ),
+      )
+      buttons.push(
+        h(
+          'a',
+          { href: `/admin/exams/${row.id}/results`, style: 'text-decoration:none;' },
+          h(NButton, { size: 'small', secondary: true }, { default: () => 'Natijalar' }),
+        ),
+      )
+      buttons.push(h(NButton, { size: 'small', type: 'error', secondary: true, onClick: () => confirmRemove(row) }, { default: () => "O'chirish" }))
+      return h('div', { style: 'display: flex; gap: 0.4rem; flex-wrap: wrap;' }, buttons)
+    },
+  },
+]
 </script>
 
 <template>
   <div>
-    <div style="display: flex; justify-content: space-between; align-items: center;">
-      <h2>Imtihonlar</h2>
-      <router-link to="/admin/exams/new" class="btn">+ Yangi imtihon</router-link>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+      <h2 style="margin: 0;">Imtihonlar</h2>
+      <router-link to="/admin/exams/new">
+        <n-button type="primary">+ Yangi imtihon</n-button>
+      </router-link>
     </div>
-    <div v-if="error" class="alert alert-error">{{ error }}</div>
 
-    <table>
-      <thead>
-        <tr>
-          <th>Nomi</th>
-          <th>Kurs</th>
-          <th>Boshlanish</th>
-          <th>Davomiylik</th>
-          <th>Holat</th>
-          <th>Havola</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="ex in exams" :key="ex.id">
-          <td>{{ ex.title }}</td>
-          <td>{{ courseName(ex.course_id) }}</td>
-          <td>{{ new Date(ex.starts_at).toLocaleString() }}</td>
-          <td>{{ ex.duration_minutes }} daq</td>
-          <td>{{ ex.status }}</td>
-          <td>
-            <button class="btn btn-secondary" @click="copyLink(ex)">Nusxalash</button>
-          </td>
-          <td style="white-space: nowrap;">
-            <button v-if="ex.status !== 'open'" class="btn" @click="changeStatus(ex, 'open')">Ochish</button>
-            <button v-if="ex.status === 'open'" class="btn btn-secondary" @click="changeStatus(ex, 'closed')">
-              Yopish
-            </button>
-            <router-link :to="`/admin/exams/${ex.id}/live-code`" class="btn btn-secondary">Kod</router-link>
-            <router-link :to="`/admin/exams/${ex.id}/results`" class="btn btn-secondary">Natijalar</router-link>
-            <button class="btn btn-danger" @click="removeExam(ex.id)">O'chirish</button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-    <p v-if="exams.length === 0" class="muted">Hozircha imtihonlar yo'q.</p>
+    <n-data-table :columns="columns" :data="exams" :bordered="false" />
+    <n-empty v-if="exams.length === 0" description="Hozircha imtihonlar yo'q" style="margin-top: 1rem;" />
   </div>
 </template>
