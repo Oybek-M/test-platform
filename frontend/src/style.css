@@ -18,6 +18,10 @@ body {
   margin: 0;
   background: var(--color-bg);
   color: var(--color-text);
+  font-size: 14px;
+  line-height: 1.6;
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
 }
 
 h1, h2, h3 {
