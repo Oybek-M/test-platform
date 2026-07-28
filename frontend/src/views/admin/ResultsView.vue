@@ -54,13 +54,54 @@ function formatDate(value: string | null) {
 }
 
 const columns: DataTableColumns<AttemptResult> = [
-  { title: 'F.I.Sh', key: 'student_name' },
-  { title: 'Ball', key: 'score', render: (row) => `${row.score ?? '-'} / ${row.total ?? '-'}` },
-  { title: 'Foiz', key: 'percent', render: (row) => (row.percent !== null ? `${row.percent}%` : '-') },
-  { title: 'Baho', key: 'grade', render: (row) => row.grade ?? '-' },
-  { title: 'Boshladi', key: 'started_at', render: (row) => formatDate(row.started_at) },
-  { title: 'Topshirdi', key: 'submitted_at', render: (row) => formatDate(row.submitted_at) },
-  { title: 'Holat', key: 'status' },
+  {
+    title: 'F.I.Sh',
+    key: 'student_name',
+    sorter: (rowA, rowB) => rowA.student_name.localeCompare(rowB.student_name),
+  },
+  {
+    title: 'Ball',
+    key: 'score',
+    render: (row) => `${row.score ?? '-'} / ${row.total ?? '-'}`,
+    sorter: (rowA, rowB) => (rowA.score ?? -1) - (rowB.score ?? -1),
+  },
+  {
+    title: 'Foiz',
+    key: 'percent',
+    render: (row) => (row.percent !== null ? `${row.percent}%` : '-'),
+    sorter: (rowA, rowB) => (rowA.percent ?? -1) - (rowB.percent ?? -1),
+  },
+  {
+    title: 'Baho',
+    key: 'grade',
+    render: (row) => row.grade ?? '-',
+    sorter: (rowA, rowB) => (rowA.grade || '').localeCompare(rowB.grade || ''),
+  },
+  {
+    title: 'Boshladi',
+    key: 'started_at',
+    render: (row) => formatDate(row.started_at),
+    sorter: (rowA, rowB) => {
+      const timeA = rowA.started_at ? new Date(rowA.started_at).getTime() : -1
+      const timeB = rowB.started_at ? new Date(rowB.started_at).getTime() : -1
+      return timeA - timeB
+    },
+  },
+  {
+    title: 'Topshirdi',
+    key: 'submitted_at',
+    render: (row) => formatDate(row.submitted_at),
+    sorter: (rowA, rowB) => {
+      const timeA = rowA.submitted_at ? new Date(rowA.submitted_at).getTime() : -1
+      const timeB = rowB.submitted_at ? new Date(rowB.submitted_at).getTime() : -1
+      return timeA - timeB
+    },
+  },
+  {
+    title: 'Holat',
+    key: 'status',
+    sorter: (rowA, rowB) => rowA.status.localeCompare(rowB.status),
+  },
   {
     title: '',
     key: 'actions',

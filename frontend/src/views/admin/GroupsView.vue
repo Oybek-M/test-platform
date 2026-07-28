@@ -14,6 +14,7 @@ const newGroupName = ref('')
 
 const expandedGroupId = ref<number | null>(null)
 const studentsByGroup = ref<Record<number, Student[]>>({})
+const studentSortDir = ref<Record<number, 'asc' | 'desc'>>({}) // 'asc' or 'desc' per group
 
 onMounted(async () => {
   courses.value = await listCourses()
@@ -76,6 +77,24 @@ async function loadStudents(groupId: number) {
 function onStudentsImported(groupId: number) {
   loadStudents(groupId)
 }
+
+function toggleStudentSort(groupId: number) {
+  if (!studentSortDir.value[groupId]) {
+    studentSortDir.value[groupId] = 'asc'
+  } else {
+    studentSortDir.value[groupId] = studentSortDir.value[groupId] === 'asc' ? 'desc' : 'asc'
+  }
+}
+
+function getSortedStudents(groupId: number) {
+  const students = studentsByGroup.value[groupId] || []
+  const sortDir = studentSortDir.value[groupId] || 'asc'
+  const sorted = [...students].sort((a, b) => {
+    const cmp = a.full_name.localeCompare(b.full_name)
+    return sortDir === 'asc' ? cmp : -cmp
+  })
+  return sorted
+}
 </script>
 
 <template>
@@ -110,12 +129,21 @@ function onStudentsImported(groupId: number) {
 
       <div v-if="expandedGroupId === g.id" style="margin-top: 1rem; border-top: 1px solid rgba(128,128,128,0.2); padding-top: 1rem;">
         <StudentImport :group-id="g.id" @imported="onStudentsImported(g.id)" />
-        <n-table style="margin-top: 1rem;" single-line>
+        <div style="margin-top: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+          <n-button
+            size="small"
+            secondary
+            @click="toggleStudentSort(g.id)"
+          >
+            F.I.Sh {{ studentSortDir[g.id] === 'desc' ? '↓' : '↑' }}
+          </n-button>
+        </div>
+        <n-table style="margin-top: 0.5rem;" single-line>
           <thead>
             <tr><th>F.I.Sh</th></tr>
           </thead>
           <tbody>
-            <tr v-for="s in studentsByGroup[g.id] || []" :key="s.id">
+            <tr v-for="s in getSortedStudents(g.id)" :key="s.id">
               <td>{{ s.full_name }}</td>
             </tr>
           </tbody>

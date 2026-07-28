@@ -65,14 +65,34 @@ function copyLink(exam: Exam) {
 }
 
 const columns: DataTableColumns<Exam> = [
-  { title: 'Nomi', key: 'title' },
-  { title: 'Kurs', key: 'course_id', render: (row) => courseName(row.course_id) },
-  { title: 'Boshlanish', key: 'starts_at', render: (row) => new Date(row.starts_at).toLocaleString() },
-  { title: 'Davomiylik', key: 'duration_minutes', render: (row) => `${row.duration_minutes} daq` },
+  {
+    title: 'Nomi',
+    key: 'title',
+    sorter: (rowA, rowB) => rowA.title.localeCompare(rowB.title),
+  },
+  {
+    title: 'Kurs',
+    key: 'course_id',
+    render: (row) => courseName(row.course_id),
+    sorter: (rowA, rowB) => courseName(rowA.course_id).localeCompare(courseName(rowB.course_id)),
+  },
+  {
+    title: 'Boshlanish',
+    key: 'starts_at',
+    render: (row) => new Date(row.starts_at).toLocaleString(),
+    sorter: (rowA, rowB) => new Date(rowA.starts_at).getTime() - new Date(rowB.starts_at).getTime(),
+  },
+  {
+    title: 'Davomiylik',
+    key: 'duration_minutes',
+    render: (row) => `${row.duration_minutes} daq`,
+    sorter: (rowA, rowB) => rowA.duration_minutes - rowB.duration_minutes,
+  },
   {
     title: 'Holat',
     key: 'status',
     render: (row) => h(NTag, { type: row.status === 'open' ? 'success' : 'default' }, { default: () => row.status }),
+    sorter: (rowA, rowB) => rowA.status.localeCompare(rowB.status),
   },
   {
     title: 'Havola',

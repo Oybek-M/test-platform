@@ -92,7 +92,11 @@ function onImported() {
 }
 
 const columns: DataTableColumns<Question> = [
-  { title: 'Savol', key: 'text' },
+  {
+    title: 'Savol',
+    key: 'text',
+    sorter: (rowA, rowB) => rowA.text.localeCompare(rowB.text),
+  },
   {
     title: 'Variantlar',
     key: 'options',
@@ -102,7 +106,12 @@ const columns: DataTableColumns<Question> = [
         .join(', ')
     },
   },
-  { title: 'Mavzu', key: 'topic', render: (row) => row.topic || '-' },
+  {
+    title: 'Mavzu',
+    key: 'topic',
+    render: (row) => row.topic || '-',
+    sorter: (rowA, rowB) => (rowA.topic || '').localeCompare(rowB.topic || ''),
+  },
   {
     title: 'Faol',
     key: 'is_active',
