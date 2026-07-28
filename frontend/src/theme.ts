@@ -20,6 +20,9 @@ export const darkThemeOverrides: GlobalThemeOverrides = {
     primaryColorSuppl: '#2dd4bf',
     borderRadius: '10px',
     bodyColor: '#0f172a',
+    cardColor: '#1e293b',
+    modalColor: '#1e293b',
+    popoverColor: '#1e293b',
     fontFamily: "'Segoe UI', system-ui, -apple-system, sans-serif",
   },
 }
