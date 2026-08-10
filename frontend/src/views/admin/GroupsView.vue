@@ -13,7 +13,6 @@ const selectedCourseId = useViewCache<number | null>('selectedCourseId', null)
 
 // Get groups for the currently-selected course (uses dynamic cache key)
 const groups = ref<Group[]>([])
-let currentCourseId: number | null = null
 
 const newGroupName = ref('')
 
@@ -39,7 +38,6 @@ watch(selectedCourseId, async (id) => {
 
 async function loadGroups(courseId: number) {
   try {
-    currentCourseId = courseId
     // Use a dynamic cache key based on courseId so different courses have separate caches
     const cacheKey = `groups:${courseId}`
     const groupsRef = useViewCache<Group[]>(cacheKey, [])

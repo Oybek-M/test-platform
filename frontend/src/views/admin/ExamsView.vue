@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, h } from 'vue'
+import { onMounted, h } from 'vue'
 import { NButton, NTag } from 'naive-ui'
 import type { DataTableColumns } from 'naive-ui'
 import { listCourses, type Course } from '../../api/courses'
