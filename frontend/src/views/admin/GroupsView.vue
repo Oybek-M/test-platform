@@ -108,12 +108,12 @@ function getSortedStudents(groupId: number) {
           :options="courses.map((c) => ({ label: c.name, value: c.id }))"
         />
       </n-form-item>
-      <n-space align="end">
-        <n-form-item label="Yangi guruh nomi" style="margin-bottom: 0; flex: 1;">
+      <n-form-item label="Yangi guruh nomi" style="margin-bottom: 0;">
+        <n-input-group>
           <n-input v-model:value="newGroupName" @keyup.enter="addGroup" />
-        </n-form-item>
-        <n-button type="primary" @click="addGroup">Qo'shish</n-button>
-      </n-space>
+          <n-button type="primary" @click="addGroup">Qo'shish</n-button>
+        </n-input-group>
+      </n-form-item>
     </n-card>
 
     <n-card v-for="g in groups" :key="g.id" style="margin-bottom: 1rem;">
