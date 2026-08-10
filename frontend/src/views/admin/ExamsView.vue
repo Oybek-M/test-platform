@@ -4,16 +4,23 @@ import { NButton, NTag } from 'naive-ui'
 import type { DataTableColumns } from 'naive-ui'
 import { listCourses, type Course } from '../../api/courses'
 import { listExams, setExamStatus, deleteExam, type Exam } from '../../api/exams'
+import { useViewCache } from '../../composables/useViewCache'
 
 const message = useMessage()
 const dialog = useDialog()
 
-const courses = ref<Course[]>([])
-const exams = ref<Exam[]>([])
+const courses = useViewCache<Course[]>('courses', [])
+const exams = useViewCache<Exam[]>('exams', [])
 
 onMounted(async () => {
-  courses.value = await listCourses()
-  await load()
+  // Load courses if not cached
+  if (courses.value.length === 0) {
+    courses.value = await listCourses()
+  }
+  // Load exams if not cached
+  if (exams.value.length === 0) {
+    await load()
+  }
 })
 
 async function load() {
@@ -31,7 +38,12 @@ function courseName(id: number) {
 async function changeStatus(exam: Exam, status: string) {
   try {
     await setExamStatus(exam.id, status)
-    await load()
+    // Update cached exam directly without full re-fetch
+    const index = exams.value.findIndex(e => e.id === exam.id)
+    if (index >= 0) {
+      exams.value[index] = { ...exams.value[index], status }
+    }
+    message.success("Holat o'zgartirildi")
   } catch (e: any) {
     message.error(e?.response?.data?.detail || "Holatni o'zgartirib bo'lmadi")
   }
@@ -47,7 +59,8 @@ function confirmRemove(exam: Exam) {
       try {
         await deleteExam(exam.id)
         message.success("Imtihon o'chirildi")
-        await load()
+        // Update cached exams by filtering out the deleted exam
+        exams.value = exams.value.filter(e => e.id !== exam.id)
       } catch (e: any) {
         message.error(e?.response?.data?.detail || "O'chirib bo'lmadi")
       }

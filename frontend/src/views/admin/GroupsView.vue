@@ -2,24 +2,34 @@
 import { ref, onMounted, watch } from 'vue'
 import { listCourses, type Course } from '../../api/courses'
 import { listGroups, createGroup, deleteGroup, listStudents, type Group, type Student } from '../../api/groups'
+import { useViewCache } from '../../composables/useViewCache'
 import StudentImport from '../../components/StudentImport.vue'
 
 const message = useMessage()
 const dialog = useDialog()
 
-const courses = ref<Course[]>([])
-const selectedCourseId = ref<number | null>(null)
+const courses = useViewCache<Course[]>('courses', [])
+const selectedCourseId = useViewCache<number | null>('selectedCourseId', null)
+
+// Get groups for the currently-selected course (uses dynamic cache key)
 const groups = ref<Group[]>([])
+let currentCourseId: number | null = null
+
 const newGroupName = ref('')
 
-const expandedGroupId = ref<number | null>(null)
-const studentsByGroup = ref<Record<number, Student[]>>({})
-const studentSortDir = ref<Record<number, 'asc' | 'desc'>>({}) // 'asc' or 'desc' per group
+const expandedGroupId = useViewCache<number | null>('expandedGroupId', null)
+const studentsByGroup = useViewCache<Record<number, Student[]>>('studentsByGroup', {})
+const studentSortDir = useViewCache<Record<number, 'asc' | 'desc'>>('studentSortDir', {})
 
 onMounted(async () => {
   courses.value = await listCourses()
-  if (courses.value.length) {
+  // If no course was previously selected, pick the first one
+  if (!selectedCourseId.value && courses.value.length) {
     selectedCourseId.value = courses.value[0].id
+  }
+  // Load groups for currently selected course (if any)
+  if (selectedCourseId.value) {
+    await loadGroups(selectedCourseId.value)
   }
 })
 
@@ -29,7 +39,18 @@ watch(selectedCourseId, async (id) => {
 
 async function loadGroups(courseId: number) {
   try {
-    groups.value = await listGroups(courseId)
+    currentCourseId = courseId
+    // Use a dynamic cache key based on courseId so different courses have separate caches
+    const cacheKey = `groups:${courseId}`
+    const groupsRef = useViewCache<Group[]>(cacheKey, [])
+
+    // If cache is empty, fetch from API (first load after app start, or after clearing cache)
+    if (groupsRef.value.length === 0) {
+      groupsRef.value = await listGroups(courseId)
+    }
+
+    // Sync to the reactive ref (the template uses `groups`, not `groupsRef`)
+    groups.value = groupsRef.value
   } catch (e: any) {
     message.error(e?.response?.data?.detail || "Guruhlarni yuklab bo'lmadi")
   }
@@ -38,10 +59,14 @@ async function loadGroups(courseId: number) {
 async function addGroup() {
   if (!selectedCourseId.value || !newGroupName.value.trim()) return
   try {
-    await createGroup({ course_id: selectedCourseId.value, name: newGroupName.value })
+    const newGroup = await createGroup({ course_id: selectedCourseId.value, name: newGroupName.value })
     newGroupName.value = ''
     message.success("Guruh qo'shildi")
-    await loadGroups(selectedCourseId.value)
+    // Update the cached groups directly (no need to re-fetch all groups)
+    const cacheKey = `groups:${selectedCourseId.value}`
+    const groupsRef = useViewCache<Group[]>(cacheKey, [])
+    groupsRef.value = [...groupsRef.value, newGroup]
+    groups.value = groupsRef.value
   } catch (e: any) {
     message.error(e?.response?.data?.detail || "Guruh yaratib bo'lmadi")
   }
@@ -54,9 +79,19 @@ function confirmRemoveGroup(group: Group) {
     positiveText: "O'chirish",
     negativeText: 'Bekor qilish',
     onPositiveClick: async () => {
-      await deleteGroup(group.id)
-      message.success("Guruh o'chirildi")
-      if (selectedCourseId.value) await loadGroups(selectedCourseId.value)
+      try {
+        await deleteGroup(group.id)
+        message.success("Guruh o'chirildi")
+        // Update cached groups by filtering out the deleted group
+        if (selectedCourseId.value) {
+          const cacheKey = `groups:${selectedCourseId.value}`
+          const groupsRef = useViewCache<Group[]>(cacheKey, [])
+          groupsRef.value = groupsRef.value.filter(g => g.id !== group.id)
+          groups.value = groupsRef.value
+        }
+      } catch (e: any) {
+        message.error(e?.response?.data?.detail || "Guruhni o'chirib bo'lmadi")
+      }
     },
   })
 }
