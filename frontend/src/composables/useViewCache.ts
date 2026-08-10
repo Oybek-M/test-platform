@@ -42,17 +42,3 @@ export function useViewCache<T>(key: string, initial: T): Ref<T> {
 
   return value as Ref<T>
 }
-
-/**
- * Clear a specific cache entry (useful for cleanup when navigating away from a view).
- */
-export function clearViewCache(key: string): void {
-  cache.delete(key)
-}
-
-/**
- * Clear all cache entries.
- */
-export function clearAllViewCache(): void {
-  cache.clear()
-}
