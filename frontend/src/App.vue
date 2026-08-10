@@ -29,7 +29,7 @@ watch(
     <n-message-provider>
       <n-dialog-provider>
         <router-view v-slot="{ Component }">
-          <component :is="Component" />
+          <component :is="Component" :key="isDark ? 'dark' : 'light'" />
         </router-view>
       </n-dialog-provider>
     </n-message-provider>
